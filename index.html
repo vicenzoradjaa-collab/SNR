@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNR TRADE - Progress Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        base: '#000000',     /* Pure Black */
+                        surface: '#0a0a0a',  /* Very dark gray */
+                        surfaceHover: '#171717', 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Hide scrollbar completely but allow scroll */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Glass effect monokrom */
+        .glass-card {
+            background: linear-gradient(145deg, rgba(20,20,20,0.8) 0%, rgba(10,10,10,0.4) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-16 pt-8">
+
+    <div class="max-w-2xl mx-auto px-5">
+        
+        <!-- Headline Section -->
+        <div class="mb-8 text-center sm:text-left">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-zinc-800 text-xs font-semibold text-zinc-400 mb-4">
+                <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                LIVE TRACKING
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2 text-white">
+                Progres Call SNR Trade
+            </h1>
+            <p class="text-zinc-500 text-sm">Pantau terus hasil setup, win rate, dan pertumbuhan portofolio secara transparan.</p>
+        </div>
+
+        <!-- Time Filters -->
+        <!-- NOTE: Ditambahkan parameter 'this' agar JS tahu persis tombol mana yang diklik -->
+        <div class="flex justify-center gap-2 overflow-x-auto pb-2 mb-6 hide-scrollbar" id="timeFilters">
+            <button onclick="updateData('7d', this)" class="filter-btn active px-5 py-2 rounded-full text-xs font-bold transition-all bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.15)]">7 Hari</button>
+            <button onclick="updateData('30d', this)" class="filter-btn px-5 py-2 rounded-full text-xs font-bold transition-all bg-surface border border-zinc-800 text-zinc-400 hover:text-white">30 Hari</button>
+            <button onclick="updateData('90d', this)" class="filter-btn px-5 py-2 rounded-full text-xs font-bold transition-all bg-surface border border-zinc-800 text-zinc-400 hover:text-white">90 Hari</button>
+            <button onclick="updateData('1y', this)" class="filter-btn px-5 py-2 rounded-full text-xs font-bold transition-all bg-surface border border-zinc-800 text-zinc-400 hover:text-white">1 Tahun</button>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="glass-card rounded-3xl p-5 mb-4 relative overflow-hidden">
+            <h3 class="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-4">Cumulative PNL (%)</h3>
+            <div class="w-full h-[220px]">
+                <canvas id="pnlChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Win / Lose Stats -->
+        <div class="flex justify-center gap-12 mb-8 px-4">
+            <div class="text-center">
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Wins</p>
+                <p class="text-2xl font-black text-white" id="valWins">14</p>
+            </div>
+            <div class="w-px bg-zinc-800"></div>
+            <div class="text-center">
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Losses</p>
+                <p class="text-2xl font-black text-zinc-500" id="valLosses">4</p>
+            </div>
+        </div>
+
+        <!-- 3 Highlight Cards -->
+        <div class="grid grid-cols-3 gap-3 mb-10">
+            <div class="glass-card rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">Total Sinyal</span>
+                <span class="text-xl font-bold text-white" id="valTotal">18</span>
+            </div>
+            <div class="glass-card rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                <span class="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1.5">Win Rate</span>
+                <span class="text-xl font-bold text-white" id="valWinrate">77.8%</span>
+            </div>
+            <div class="glass-card rounded-2xl p-4 flex flex-col items-center justify-center text-center bg-zinc-900 border-zinc-700">
+                <span class="text-zinc-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Total PNL</span>
+                <span class="text-xl font-black text-white" id="valTotalPnl">+45.5%</span>
+            </div>
+        </div>
+
+        <!-- Signal History -->
+        <div>
+            <h2 class="text-lg font-bold text-white mb-4">
+                Riwayat Sinyal
+            </h2>
+            
+            <div class="space-y-3" id="historyList">
+                <!-- Data List (Dibuat lewat JS) -->
+            </div>
+            <!-- Container Tombol Lihat Lebih Banyak -->
+            <div id="seeMoreContainer" class="mt-4 hidden">
+                <button onclick="showAllHistory()" class="w-full py-3 rounded-xl border border-zinc-800 text-zinc-400 text-sm font-bold hover:bg-zinc-800 hover:text-white transition-all">
+                    Lihat Lebih Banyak
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Set Font Global Chart.js
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+        Chart.defaults.color = '#71717a'; 
+
+        // ==========================================
+        // FUNGSI TANGGAL DINAMIS BERDASARKAN HARI INI
+        // ==========================================
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        function getPastDate(daysAgo) {
+            let d = new Date();
+            d.setDate(d.getDate() - daysAgo);
+            return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]}`;
+        }
+
+        // ==========================================
+        // DATABASE (Dinamis mengambil tanggal x hari ke belakang)
+        // ==========================================
+        const db = {
+            '7d': {
+                chartLabels: [getPastDate(6), getPastDate(5), getPastDate(4), getPastDate(3), getPastDate(2), getPastDate(1), getPastDate(0)],
+                chartData: [0, 5, 2, 12, 8, 25, 45.5],
+                wins: 14, losses: 4, total: 19, winrate: '77.8%', totalPnl: '+45.5%',
+                history: [
+                    { pair: 'BTC/USDT', type: 'LONG', leverage: '20x', status: 'RUNNING', pnl: '+2.5%', date: getPastDate(0) },
+                    { pair: 'ETH/USDT', type: 'GRID NETRAL', leverage: '5x', status: 'WIN', pnl: '+5.0%', date: getPastDate(1) },
+                    { pair: 'SOL/USDT', type: 'SHORT', leverage: '50x', status: 'LOSS', pnl: '-8.5%', date: getPastDate(1) },
+                    { pair: 'DOGE/USDT', type: 'LONG', leverage: '10x', status: 'BEP', pnl: '0.0%', date: getPastDate(2) },
+                    { pair: 'AVAX/USDT', type: 'GRID SHORT', leverage: '2x', status: 'WIN', pnl: '+12.1%', date: getPastDate(3) },
+                    { pair: 'XRP/USDT', type: 'LONG', leverage: '100x', status: 'CANCEL', pnl: '-', date: getPastDate(4) },
+                    { pair: 'LINK/USDT', type: 'SHORT', leverage: '15x', status: 'WIN', pnl: '+8.0%', date: getPastDate(5) }
+                ]
+            },
+            '30d': {
+                chartLabels: [getPastDate(30), getPastDate(25), getPastDate(20), getPastDate(15), getPastDate(10), getPastDate(5), getPastDate(0)],
+                chartData: [15, 30, 25, 60, 85, 100, 120.4],
+                wins: 48, losses: 12, total: 60, winrate: '80.0%', totalPnl: '+120.4%',
+                history: [
+                    { pair: 'AVAX/USDT', type: 'GRID LONG', leverage: '10x', status: 'WIN', pnl: '+22.1%', date: getPastDate(5) },
+                    { pair: 'XRP/USDT', type: 'SHORT', leverage: '75x', status: 'CANCEL', pnl: '-', date: getPastDate(8) },
+                    { pair: 'BNB/USDT', type: 'GRID SHORT', leverage: '5x', status: 'WIN', pnl: '+12.5%', date: getPastDate(10) },
+                    { pair: 'LINK/USDT', type: 'LONG', leverage: '20x', status: 'LOSS', pnl: '-10.0%', date: getPastDate(12) },
+                    { pair: 'ADA/USDT', type: 'LONG', leverage: '50x', status: 'WIN', pnl: '+34.0%', date: getPastDate(15) },
+                    { pair: 'SOL/USDT', type: 'SHORT', leverage: '10x', status: 'WIN', pnl: '+18.0%', date: getPastDate(18) }
+                ]
+            },
+            '90d': {
+                chartLabels: [getPastDate(90), getPastDate(75), getPastDate(60), getPastDate(45), getPastDate(30), getPastDate(15), getPastDate(0)],
+                chartData: [80, 100, 150, 140, 220, 280, 310.2],
+                wins: 142, losses: 40, total: 182, winrate: '78.0%', totalPnl: '+310.2%',
+                history: [
+                    { pair: 'MATIC/USDT', type: 'LONG', leverage: '25x', status: 'WIN', pnl: '+45.0%', date: getPastDate(18) },
+                    { pair: 'ADA/USDT', type: 'LONG', leverage: '10x', status: 'WIN', pnl: '+30.0%', date: getPastDate(35) },
+                    { pair: 'DOT/USDT', type: 'SHORT', leverage: '50x', status: 'LOSS', pnl: '-15.0%', date: getPastDate(70) },
+                    { pair: 'NEAR/USDT', type: 'LONG', leverage: '5x', status: 'WIN', pnl: '+22.5%', date: getPastDate(75) }
+                ]
+            },
+            '1y': {
+                chartLabels: [getPastDate(360), getPastDate(300), getPastDate(240), getPastDate(180), getPastDate(120), getPastDate(60), getPastDate(0)],
+                chartData: [200, 350, 450, 680, 800, 950, 1050.8],
+                wins: 580, losses: 150, total: 730, winrate: '79.4%', totalPnl: '+1050.8%',
+                history: [
+                    { pair: 'BTC/USDT', type: 'LONG', leverage: '10x', status: 'WIN', pnl: '+150.0%', date: getPastDate(120) },
+                    { pair: 'ETH/USDT', type: 'SHORT', leverage: '20x', status: 'LOSS', pnl: '-25.0%', date: getPastDate(180) },
+                    { pair: 'SOL/USDT', type: 'LONG', leverage: '150x', status: 'WIN', pnl: '+320.0%', date: getPastDate(250) },
+                    { pair: 'XRP/USDT', type: 'SHORT', leverage: '25x', status: 'WIN', pnl: '+88.0%', date: getPastDate(310) }
+                ]
+            }
+        };
+
+        // ==========================================
+        // INIT CHART.JS
+        // ==========================================
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        
+        let gradient = ctx.createLinearGradient(0, 0, 0, 250);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.15)'); 
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        let pnlChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: db['7d'].chartLabels,
+                datasets: [{
+                    label: 'PNL (%)',
+                    data: db['7d'].chartData,
+                    borderColor: '#ffffff',
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.4, 
+                    pointRadius: 0, 
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#000000',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#171717',
+                        titleColor: '#a1a1aa',
+                        bodyColor: '#ffffff',
+                        bodyFont: { weight: 'bold' },
+                        borderColor: '#27272a',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) { return context.raw + '%'; }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: { font: { size: 10 }, color: '#71717a' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(63, 63, 70, 0.2)', borderDash: [5, 5], drawBorder: false },
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#71717a',
+                            callback: function(value) { return value + '%'; }
+                        }
+                    }
+                }
+            }
+        });
+
+        // ==========================================
+        // LOGIKA FILTER & RENDER HISTORY
+        // ==========================================
+        let currentPeriod = '7d';
+
+        function updateData(period, btnElement = null) {
+            currentPeriod = period;
+            const data = db[period];
+
+            // 1. UPDATE TOMBOL AKTIF (Memperbaiki text yang tidak kelihatan)
+            // Reset semua tombol ke style default
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                btn.className = "filter-btn px-5 py-2 rounded-full text-xs font-bold transition-all bg-surface border border-zinc-800 text-zinc-400 hover:text-white";
+            });
+
+            // Set style hanya pada tombol yang diklik (Putih dengan text Hitam murni)
+            const clickedBtn = btnElement || document.querySelector(`.filter-btn[onclick*="${period}"]`);
+            if(clickedBtn) {
+                clickedBtn.className = "filter-btn active px-5 py-2 rounded-full text-xs font-bold transition-all bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.15)]";
+            }
+
+            // 2. UPDATE CHART
+            pnlChart.data.labels = data.chartLabels;
+            pnlChart.data.datasets[0].data = data.chartData;
+            pnlChart.update();
+
+            // 3. UPDATE STATISTIK
+            updateElementText('valWins', data.wins);
+            updateElementText('valLosses', data.losses);
+            updateElementText('valTotal', data.total);
+            updateElementText('valWinrate', data.winrate);
+            
+            const pnlEl = document.getElementById('valTotalPnl');
+            pnlEl.innerText = data.totalPnl;
+            pnlEl.className = `text-xl font-black ${data.totalPnl.includes('-') ? 'text-zinc-500' : 'text-white'}`;
+
+            // 4. RENDER HISTORY
+            renderHistory(data.history, false);
+        }
+
+        function updateElementText(id, value) {
+            const el = document.getElementById(id);
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.innerText = value;
+                el.style.opacity = 1;
+                el.style.transition = "opacity 0.3s ease";
+            }, 150);
+        }
+
+        function showAllHistory() {
+            renderHistory(db[currentPeriod].history, true);
+        }
+
+        function renderHistory(historyData, showAll = false) {
+            const listContainer = document.getElementById('historyList');
+            const seeMoreBtn = document.getElementById('seeMoreContainer');
+            listContainer.innerHTML = '';
+
+            const itemsToShow = showAll ? historyData : historyData.slice(0, 5);
+
+            itemsToShow.forEach(item => {
+                let typeColors = 'bg-zinc-900 text-zinc-300 border border-zinc-800';
+                if(item.type.includes('LONG')) typeColors = 'bg-white text-black border border-white font-extrabold';
+                if(item.type.includes('SHORT')) typeColors = 'bg-transparent text-zinc-400 border border-zinc-600';
+
+                // Hitung risk berdasarkan besar leverage
+                let levVal = parseInt(item.leverage) || 1;
+                let riskLabel = 'Low Risk';
+                let riskColor = 'text-zinc-400';
+                if(levVal >= 10 && levVal <= 25) {
+                    riskLabel = 'Med Risk';
+                    riskColor = 'text-zinc-300';
+                } else if(levVal > 25) {
+                    riskLabel = 'High Risk';
+                    riskColor = 'text-white font-bold';
+                }
+
+                let statusColor = 'text-zinc-500';
+                let statusDot = 'bg-zinc-600';
+                let pulseClass = '';
+
+                if(item.status === 'WIN') { statusColor = 'text-white'; statusDot = 'bg-white'; }
+                if(item.status === 'LOSS') { statusColor = 'text-zinc-600'; statusDot = 'bg-zinc-600'; }
+                if(item.status === 'BEP') { statusColor = 'text-zinc-400'; statusDot = 'bg-zinc-400'; }
+                if(item.status === 'CANCEL') { statusColor = 'text-zinc-500'; statusDot = 'bg-transparent border border-zinc-500'; }
+                if(item.status === 'RUNNING') { 
+                    statusColor = 'text-white'; 
+                    statusDot = 'bg-white'; 
+                    pulseClass = 'animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]'; 
+                }
+
+                let pnlTextColor = 'text-zinc-500';
+                if (item.pnl.includes('+')) pnlTextColor = 'text-white';
+
+                const html = `
+                <div class="glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-zinc-900 transition-all">
+                    <!-- Left: Pair, Type & Leverage Info -->
+                    <div class="flex flex-col gap-1 w-1/3">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-white">${item.pair}</span>
+                            <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.2 rounded font-semibold">${item.leverage}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${typeColors}">${item.type}</span>
+                            <span class="text-[8px] ${riskColor}">• ${riskLabel}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Center: Status -->
+                    <div class="w-1/3 flex justify-center">
+                        <div class="flex items-center gap-1.5 bg-surface px-2.5 py-1 rounded-full border border-zinc-800">
+                            <span class="w-1.5 h-1.5 rounded-full ${statusDot} ${pulseClass}"></span>
+                            <span class="text-[9px] font-bold ${statusColor} uppercase tracking-wider">${item.status}</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: PNL & Date -->
+                    <div class="flex flex-col items-end gap-1 w-1/3">
+                        <span class="text-sm font-black ${pnlTextColor}">${item.pnl}</span>
+                        <span class="text-[10px] text-zinc-500 font-medium">${item.date}</span>
+                    </div>
+                </div>`;
+                listContainer.insertAdjacentHTML('beforeend', html);
+            });
+
+            if (!showAll && historyData.length > 5) {
+                seeMoreBtn.classList.remove('hidden');
+            } else {
+                seeMoreBtn.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // MENGHILANGKAN TOOLTIP CHART SAAT KLIK DI LUAR
+        // ==========================================
+        function hideChartTooltip(event) {
+            const chartCanvas = document.getElementById('pnlChart');
+            if (event.target !== chartCanvas) {
+                pnlChart.setActiveElements([]); // Hapus titik aktif
+                pnlChart.tooltip.setActiveElements([], {x: 0, y: 0}); // Sembunyikan tooltip
+                pnlChart.update();
+            }
+        }
+        document.addEventListener('touchstart', hideChartTooltip);
+        document.addEventListener('mousedown', hideChartTooltip);
+
+        // Render pertama kali (Default 7 Hari)
+        updateData('7d');
+    </script>
+</body>
+</html>
