@@ -513,56 +513,67 @@
         }
 
         // ==========================================
-        // SISTEM LOADING & NOTIFIKASI
+        // SISTEM LOADING & NOTIFIKASI & DATABASE
         // ==========================================
         const spinnerSvg = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
+        // PASTE URL ANDA DI BAWAH INI (Di antara tanda kutip)
+        const SCRIPT_URL = "PASTE_URL_APPS_SCRIPT_ANDA_DI_SINI";
+
         async function handleNewSignal(event, btnElement) {
             event.preventDefault();
-            const pair = document.getElementById('inputPair').value.toUpperCase();
             
+            // 1. Ambil data dari form
+            const pair = document.getElementById('inputPair').value.toUpperCase();
+            const type = document.getElementById('valType').value;
+            const leverage = document.getElementById('inputLeverage').value;
+            const risk = document.getElementById('valRisk').value;
+            const date = document.getElementById('inputDate').value;
+            
+            // 2. Loading Tombol
             const originalText = btnElement.innerHTML;
             btnElement.disabled = true;
             btnElement.classList.add('opacity-50', 'cursor-not-allowed');
             btnElement.innerHTML = `${spinnerSvg} <span>Menyiarkan...</span>`;
 
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            btnElement.disabled = false;
-            btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
-            btnElement.innerHTML = originalText;
+            try {
+                // 3. Siapkan paket data untuk dikirim
+                const payload = {
+                    pair: pair,
+                    type: type,
+                    leverage: leverage,
+                    risk: risk,
+                    date: date,
+                    status: "RUNNING", 
+                    pnl: "0%"
+                };
 
-            showToast(`Sinyal ${pair} berhasil disiarkan!`);
-            
-            document.getElementById('inputPair').value = '';
-            document.getElementById('inputLeverage').value = '';
-            selectRisk('Otomatis', false); 
-        }
+                // 4. Kirim ke Google Sheets!
+                await fetch(SCRIPT_URL, {
+                    redirect: "follow",
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain;charset=utf-8",
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-        async function handleUpdateSignal(btnElement, pairName) {
-            const originalText = btnElement.innerHTML;
-            btnElement.disabled = true;
-            btnElement.classList.add('opacity-50', 'cursor-not-allowed');
-            btnElement.innerHTML = `${spinnerSvg} <span>Menyimpan...</span>`;
+                showToast(`Sinyal ${pair} berhasil disiarkan!`);
+                
+                // Reset Form
+                document.getElementById('inputPair').value = '';
+                document.getElementById('inputLeverage').value = '';
+                selectRisk('Otomatis', false); 
 
-            await new Promise(resolve => setTimeout(resolve, 1200));
-
-            btnElement.disabled = false;
-            btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
-            btnElement.innerHTML = originalText;
-
-            showToast(`Perubahan ${pairName} berhasil disimpan!`);
-        }
-
-        let toastTimeout;
-        function showToast(message) {
-            const toastEl = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMessage');
-            
-            toastMsg.innerText = message;
-            toastEl.classList.add('show');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
+            } catch (error) {
+                alert("Gagal menyiarkan sinyal. Pastikan internet stabil.");
+                console.error(error);
+            } finally {
+                // Matikan loading
+                btnElement.disabled = false;
+                btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnElement.innerHTML = originalText;
+            }
         }
 
     </script>
