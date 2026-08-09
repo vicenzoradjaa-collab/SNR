@@ -25,7 +25,6 @@
 </head>
 <body class="min-h-screen pb-16 pt-8 relative">
 
-    <!-- Toast Notification -->
     <div class="fixed top-5 left-0 right-0 z-[1000] flex justify-center pointer-events-none">
         <div id="toast" class="bg-white text-black px-6 py-3 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.2)] font-bold text-sm flex items-center gap-2">
             <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
@@ -53,7 +52,6 @@
 
     <div class="max-w-2xl mx-auto px-5">
         
-        <!-- Header -->
         <div class="flex justify-between items-center mb-8 border-b border-zinc-800 pb-5">
             <div>
                 <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
@@ -134,7 +132,7 @@
             </form>
         </div>
 
-        <!-- Section 2: Kelola Sinyal (Live List) -->
+        <!-- Section 2: Kelola Sinyal -->
         <div>
             <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
@@ -150,109 +148,73 @@
 
     <script>
         // ==========================================
-        // URL API GOOGLE SPREADSHEET
+        // URL API GOOGLE SPREADSHEET (BIARKAN SAMA)
         // ==========================================
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9ABsd_BDOLnbzDfehd7EVa3Uov77DXSsg8E4S28ihD2dFHlly7hzOFSXXdO2LLhj9/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj2TPPRDoNFpyU2_jPAsPfMcIfM6TreWYDF6idUvg6GqDAW-0BsYlUL_9V_rdUyWpY/exec";
         const spinnerSvg = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
-        // ==========================================
-        // SISTEM DROPDOWN & EVENT LUAR KLIK
-        // ==========================================
+        // UI Helpers
         function toggleDropdown(id) {
-            const cal = document.getElementById('calendarWrapper');
-            if (cal) cal.classList.add('hidden');
+            const cal = document.getElementById('calendarWrapper'); if (cal) cal.classList.add('hidden');
             document.querySelectorAll('.signal-card').forEach(el => { el.style.zIndex = '10'; });
-            document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => {
-                if(el.id !== id) el.classList.add('hidden');
-            });
-            const el = document.getElementById(id);
-            el.classList.toggle('hidden');
+            document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => { if(el.id !== id) el.classList.add('hidden'); });
+            const el = document.getElementById(id); el.classList.toggle('hidden');
             if(!el.classList.contains('hidden')) {
-                const parentCard = el.closest('.signal-card');
-                if(parentCard) parentCard.style.zIndex = '50';
+                const parentCard = el.closest('.signal-card'); if(parentCard) parentCard.style.zIndex = '50';
             }
         }
-
         function selectOption(btnId, valId, dropdownId, text) {
-            document.getElementById(btnId).querySelector('span').innerText = text;
-            document.getElementById(valId).value = text;
+            document.getElementById(btnId).querySelector('span').innerText = text; document.getElementById(valId).value = text;
             document.getElementById(dropdownId).classList.add('hidden');
             const parentCard = document.getElementById(dropdownId).closest('.signal-card');
             if(parentCard) parentCard.style.zIndex = '10';
         }
-
         function closePopupsOutside(e) {
             if (!e.target.closest('button[onclick*="toggleDropdown"]') && !e.target.closest('ul[id*="Dropdown"]')) {
                 document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('.signal-card').forEach(el => el.style.zIndex = '10');
             }
             if (!e.target.closest('#calendarWrapper') && !e.target.closest('#inputDate') && !e.target.closest('button[onclick*="changeMonth"]')) {
-                const cal = document.getElementById('calendarWrapper');
-                if (cal) cal.classList.add('hidden');
+                const cal = document.getElementById('calendarWrapper'); if (cal) cal.classList.add('hidden');
             }
         }
         document.addEventListener('mousedown', closePopupsOutside);
         document.addEventListener('touchstart', closePopupsOutside, { passive: true });
 
-        // ==========================================
-        // AUTO RISK & CALENDAR
-        // ==========================================
+        // Auto Risk
         function selectRisk(text, isManual) {
-            const btnSpan = document.getElementById('btnRisk').querySelector('span');
-            const valInput = document.getElementById('valRisk');
-            valInput.dataset.manual = isManual ? "true" : "false";
-            valInput.value = text;
-            if (!isManual) {
-                btnSpan.innerText = "Otomatis";
-                btnSpan.className = "text-zinc-400";
-                handleLeverageInput(); 
-            } else {
-                btnSpan.innerText = text;
-                btnSpan.className = "text-white";
-            }
+            const btnSpan = document.getElementById('btnRisk').querySelector('span'); const valInput = document.getElementById('valRisk');
+            valInput.dataset.manual = isManual ? "true" : "false"; valInput.value = text;
+            if (!isManual) { btnSpan.innerText = "Otomatis"; btnSpan.className = "text-zinc-400"; handleLeverageInput(); } 
+            else { btnSpan.innerText = text; btnSpan.className = "text-white"; }
             document.getElementById('riskDropdown').classList.add('hidden');
         }
-
         function handleLeverageInput() {
-            const levStr = document.getElementById('inputLeverage').value;
-            const valRisk = document.getElementById('valRisk');
+            const levStr = document.getElementById('inputLeverage').value; const valRisk = document.getElementById('valRisk');
             if (valRisk.dataset.manual === "true") return;
-            const btnSpan = document.getElementById('btnRisk').querySelector('span');
-            const lev = parseInt(levStr) || 0;
+            const btnSpan = document.getElementById('btnRisk').querySelector('span'); const lev = parseInt(levStr) || 0;
             if (levStr === "") { btnSpan.innerText = "Otomatis"; btnSpan.className = "text-zinc-400"; valRisk.value = "Otomatis"; return; }
             let calculatedRisk = "";
-            if (lev < 10) calculatedRisk = "Low Risk";
-            else if (lev <= 25) calculatedRisk = "Medium Risk";
-            else if (lev <= 100) calculatedRisk = "High Risk";
-            else calculatedRisk = "Very High Risk";
-            btnSpan.innerText = `Otomatis (${calculatedRisk})`;
-            btnSpan.className = "text-white font-bold";
-            valRisk.value = calculatedRisk; 
+            if (lev < 10) calculatedRisk = "Low Risk"; else if (lev <= 25) calculatedRisk = "Medium Risk"; else if (lev <= 100) calculatedRisk = "High Risk"; else calculatedRisk = "Very High Risk";
+            btnSpan.innerText = `Otomatis (${calculatedRisk})`; btnSpan.className = "text-white font-bold"; valRisk.value = calculatedRisk; 
         }
 
+        // Calendar
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         const fullMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        let calDate = new Date(); 
-        let todayDate = new Date(); 
+        let calDate = new Date(); let todayDate = new Date(); 
         document.getElementById('inputDate').value = `${String(todayDate.getDate()).padStart(2, '0')} ${monthNames[todayDate.getMonth()]}`;
-
         function toggleCalendar() {
             document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.signal-card').forEach(el => el.style.zIndex = '10');
-            document.getElementById('calendarWrapper').classList.toggle('hidden');
-            renderCalendar();
+            document.getElementById('calendarWrapper').classList.toggle('hidden'); renderCalendar();
         }
-
         function changeMonth(step) { calDate.setMonth(calDate.getMonth() + step); renderCalendar(); }
-
         function renderCalendar() {
-            const year = calDate.getFullYear();
-            const month = calDate.getMonth();
+            const year = calDate.getFullYear(); const month = calDate.getMonth();
             document.getElementById('calMonthYear').innerText = `${fullMonthNames[month]} ${year}`;
-            const firstDay = new Date(year, month, 1).getDay(); 
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const grid = document.getElementById('calDaysGrid');
-            grid.innerHTML = '';
+            const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const grid = document.getElementById('calDaysGrid'); grid.innerHTML = '';
             for(let i = 0; i < firstDay; i++) { grid.innerHTML += `<div></div>`; }
             for(let day = 1; day <= daysInMonth; day++) {
                 const isToday = (day === todayDate.getDate() && month === todayDate.getMonth() && year === todayDate.getFullYear());
@@ -265,24 +227,19 @@
             document.getElementById('calendarWrapper').classList.add('hidden');
         }
 
-        // ==========================================
-        // TOAST NOTIFICATION
-        // ==========================================
+        // Toast
         let toastTimeout;
         function showToast(message) {
-            const toastEl = document.getElementById('toast');
-            document.getElementById('toastMessage').innerText = message;
-            toastEl.classList.add('show');
-            clearTimeout(toastTimeout);
+            const toastEl = document.getElementById('toast'); document.getElementById('toastMessage').innerText = message;
+            toastEl.classList.add('show'); clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
         }
 
-        // ==========================================
-        // MENGGAMBAR KARTU KE LAYAR UI
-        // ==========================================
-        function addSignalCardToUI(data, index = 0) {
+        // UI Card Builder
+        function addSignalCardToUI(data) {
             const container = document.getElementById('signalsContainer');
-            const uniqueId = Date.now().toString() + index + Math.floor(Math.random() * 1000);
+            // WAJIB: Gunakan ID dari database, agar Update & Delete tepat sasaran
+            const uniqueId = data.id; 
             
             let typeColors = 'bg-zinc-800 text-zinc-300';
             if(data.type && data.type.includes('LONG')) typeColors = 'bg-white text-black font-extrabold';
@@ -299,8 +256,7 @@
                         <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-semibold">${data.leverage}</span>
                         <span class="text-[9px] px-2 py-0.5 rounded ${typeColors}">${data.type}</span>
                     </div>
-                    <!-- Tombol Hapus dikirimkan variabel Pair dan Date agar Sheet tahu baris mana yang dihapus -->
-                    <button onclick="openDeleteModal('${data.pair}', 'card-${uniqueId}', '${data.date}')" class="p-1.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all ml-2">
+                    <button onclick="openDeleteModal('${data.pair}', '${uniqueId}')" class="p-1.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all ml-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
@@ -323,12 +279,10 @@
                     </div>
                     <div class="w-1/2">
                         <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Update PNL (%)</label>
-                        <!-- Tambahkan ID ke input PNL untuk mempermudah saat di Update -->
                         <input type="text" id="valPnl${uniqueId}" value="${rawPnl}" class="w-full px-3 py-2.5 rounded-lg text-xs font-semibold text-white text-center">
                     </div>
                 </div>
-                <!-- Tombol Update dikirimkan variabel Pair dan Date agar Sheet tahu baris mana yang diupdate -->
-                <button onclick="handleUpdateSignal(this, '${data.pair}', '${uniqueId}', '${data.date}')" class="w-full mt-1 border border-zinc-700 text-zinc-300 font-bold text-[14px] py-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all flex justify-center items-center">
+                <button onclick="handleUpdateSignal(this, '${data.pair}', '${uniqueId}')" class="w-full mt-1 border border-zinc-700 text-zinc-300 font-bold text-[14px] py-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all flex justify-center items-center">
                     <span>Simpan Perubahan</span>
                 </button>
             </div>`;
@@ -336,7 +290,7 @@
         }
 
         // ==========================================
-        // 1. FUNGSI LOAD SEMUA DATA DARI GOOGLE SHEETS
+        // 1. GET DATA
         // ==========================================
         async function loadSignalsFromSheets() {
             const container = document.getElementById('signalsContainer');
@@ -351,17 +305,17 @@
                     return;
                 }
                 
-                fetchedData.forEach((row, index) => {
-                    if(row.pair) addSignalCardToUI(row, index); 
+                fetchedData.forEach((row) => {
+                    if(row.pair && row.id) addSignalCardToUI(row); 
                 });
             } catch (error) {
-                container.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm">Gagal memuat Database.<br>Pastikan internet stabil.</div>`;
+                container.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm">Gagal memuat Database.</div>`;
             }
         }
         window.addEventListener('DOMContentLoaded', loadSignalsFromSheets);
 
         // ==========================================
-        // 2. FUNGSI TAMBAH DATA (CREATE)
+        // 2. ADD DATA
         // ==========================================
         async function handleNewSignal(event, btnElement) {
             event.preventDefault();
@@ -377,7 +331,10 @@
             btnElement.innerHTML = `${spinnerSvg} <span>Menyiarkan...</span>`;
 
             try {
-                const payload = { action: "add", pair: pair, type: type, leverage: leverage, risk: risk, date: date, status: "RUNNING", pnl: "0%" };
+                // Generate ID sendiri dari Front-end
+                const newId = Date.now().toString() + Math.floor(Math.random() * 1000);
+                const payload = { action: "add", id: newId, pair: pair, type: type, leverage: leverage, risk: risk, date: date, status: "RUNNING", pnl: "0%" };
+                
                 const response = await fetch(SCRIPT_URL, { redirect: "follow", method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
                 const result = await response.json();
 
@@ -390,7 +347,7 @@
                     const noDataMsg = document.querySelector('#signalsContainer .text-zinc-500');
                     if(noDataMsg) noDataMsg.remove();
                     
-                    addSignalCardToUI(payload, 99999);
+                    addSignalCardToUI(payload);
                 } else {
                     alert("Gagal: " + result.message);
                 }
@@ -403,9 +360,9 @@
         }
 
         // ==========================================
-        // 3. FUNGSI UPDATE DATA (UPDATE STATUS & PNL)
+        // 3. UPDATE DATA
         // ==========================================
-        async function handleUpdateSignal(btnElement, pairName, uniqueId, dateValue) {
+        async function handleUpdateSignal(btnElement, pairName, uniqueId) {
             const statusVal = document.getElementById(`valStatus${uniqueId}`).value;
             const pnlVal = document.getElementById(`valPnl${uniqueId}`).value;
 
@@ -414,7 +371,7 @@
             btnElement.innerHTML = `${spinnerSvg} <span>Menyimpan...</span>`;
             
             try {
-                const payload = { action: "update", pair: pairName, date: dateValue, status: statusVal, pnl: pnlVal };
+                const payload = { action: "update", id: uniqueId, status: statusVal, pnl: pnlVal };
                 const response = await fetch(SCRIPT_URL, { redirect: "follow", method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
                 const result = await response.json();
 
@@ -424,7 +381,7 @@
                     alert("Gagal update di Sheet: " + result.message);
                 }
             } catch (error) {
-                alert("Gagal koneksi. Pastikan internet stabil.");
+                alert("Gagal koneksi internet.");
             } finally {
                 btnElement.disabled = false; btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
                 btnElement.innerHTML = originalText;
@@ -432,57 +389,44 @@
         }
 
         // ==========================================
-        // 4. FUNGSI HAPUS DATA (DELETE)
+        // 4. DELETE DATA
         // ==========================================
         let cardIdToDelete = null;
-        let pairToDelete = null;
-        let dateToDelete = null;
 
-        function openDeleteModal(pairName, cardId, dateValue) {
-            cardIdToDelete = cardId;
-            pairToDelete = pairName;
-            dateToDelete = dateValue;
+        function openDeleteModal(pairName, uniqueId) {
+            cardIdToDelete = uniqueId;
             document.getElementById('deleteSignalName').innerText = pairName;
-            
-            const modal = document.getElementById('deleteModal');
-            const card = document.getElementById('deleteModalCard');
+            const modal = document.getElementById('deleteModal'); const card = document.getElementById('deleteModalCard');
             modal.classList.remove('hidden');
             setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); card.classList.add('scale-100'); }, 10);
         }
 
         function closeDeleteModal() {
-            const modal = document.getElementById('deleteModal');
-            const card = document.getElementById('deleteModalCard');
+            const modal = document.getElementById('deleteModal'); const card = document.getElementById('deleteModalCard');
             modal.classList.add('opacity-0'); card.classList.remove('scale-100'); card.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); cardIdToDelete = null; pairToDelete = null; dateToDelete = null; }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); cardIdToDelete = null; }, 300);
         }
 
         async function confirmDelete() {
             if(!cardIdToDelete) return;
-            const cardElement = document.getElementById(cardIdToDelete);
             const btnConfirm = document.getElementById('btnConfirmDelete');
             const btnCancel = document.getElementById('btnCancelDelete');
-            
-            // Animasi Loading
             const originalText = btnConfirm.innerHTML;
-            btnConfirm.disabled = true; btnCancel.disabled = true;
-            btnConfirm.innerHTML = spinnerSvg; 
+            btnConfirm.disabled = true; btnCancel.disabled = true; btnConfirm.innerHTML = spinnerSvg; 
 
             try {
-                // Tembak API Google Sheet dengan perintah hapus
-                const payload = { action: "delete", pair: pairToDelete, date: dateToDelete };
+                const payload = { action: "delete", id: cardIdToDelete };
                 const response = await fetch(SCRIPT_URL, { redirect: "follow", method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
                 const result = await response.json();
 
                 if (result.status === "success") {
                     closeDeleteModal(); 
+                    const cardElement = document.getElementById('card-' + cardIdToDelete);
                     if(cardElement) {
                         cardElement.style.opacity = '0'; cardElement.style.transform = 'scale(0.9)';
                         setTimeout(() => {
                             cardElement.remove(); 
                             showToast('Sinyal berhasil dihapus dari Sheet!');
-                            
-                            // Jika list kosong, tampilkan text belum ada sinyal
                             const container = document.getElementById('signalsContainer');
                             if(container.children.length === 0) {
                                  container.innerHTML = `<div class="text-center py-10 text-zinc-500 font-bold text-sm">Belum ada sinyal di database.</div>`;
@@ -490,15 +434,13 @@
                         }, 300);
                     }
                 } else {
-                    alert("Gagal menghapus dari Sheet: " + result.message);
+                    alert("Gagal menghapus: " + result.message);
                     closeDeleteModal();
                 }
             } catch (error) {
-                alert("Gagal menghapus. Pastikan internet stabil.");
-                closeDeleteModal();
+                alert("Gagal menghapus. Pastikan internet stabil."); closeDeleteModal();
             } finally {
-                btnConfirm.disabled = false; btnCancel.disabled = false;
-                btnConfirm.innerHTML = originalText;
+                btnConfirm.disabled = false; btnCancel.disabled = false; btnConfirm.innerHTML = originalText;
             }
         }
     </script>
