@@ -51,7 +51,6 @@
     </div>
 
     <div class="max-w-2xl mx-auto px-5">
-        
         <div class="flex justify-between items-center mb-8 border-b border-zinc-800 pb-5">
             <div>
                 <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
@@ -148,7 +147,7 @@
 
     <script>
         // ==========================================
-        // URL API GOOGLE SPREADSHEET (BIARKAN SAMA)
+        // URL API GOOGLE SPREADSHEET
         // ==========================================
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj2TPPRDoNFpyU2_jPAsPfMcIfM6TreWYDF6idUvg6GqDAW-0BsYlUL_9V_rdUyWpY/exec";
         const spinnerSvg = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
@@ -238,8 +237,8 @@
         // UI Card Builder
         function addSignalCardToUI(data) {
             const container = document.getElementById('signalsContainer');
-            // WAJIB: Gunakan ID dari database, agar Update & Delete tepat sasaran
-            const uniqueId = data.id; 
+            // Jika data ID kosong, kasih ID acak agar UI tidak bentrok (tapi fallback pair di backend akan menyelamatkan)
+            const uniqueId = data.id || "TMP" + Date.now().toString(); 
             
             let typeColors = 'bg-zinc-800 text-zinc-300';
             if(data.type && data.type.includes('LONG')) typeColors = 'bg-white text-black font-extrabold';
@@ -306,7 +305,7 @@
                 }
                 
                 fetchedData.forEach((row) => {
-                    if(row.pair && row.id) addSignalCardToUI(row); 
+                    if(row.pair) addSignalCardToUI(row); 
                 });
             } catch (error) {
                 container.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm">Gagal memuat Database.</div>`;
@@ -331,8 +330,7 @@
             btnElement.innerHTML = `${spinnerSvg} <span>Menyiarkan...</span>`;
 
             try {
-                // Generate ID sendiri dari Front-end
-                const newId = Date.now().toString() + Math.floor(Math.random() * 1000);
+                const newId = "ID_" + Date.now().toString() + Math.floor(Math.random() * 1000);
                 const payload = { action: "add", id: newId, pair: pair, type: type, leverage: leverage, risk: risk, date: date, status: "RUNNING", pnl: "0%" };
                 
                 const response = await fetch(SCRIPT_URL, { redirect: "follow", method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
@@ -371,7 +369,8 @@
             btnElement.innerHTML = `${spinnerSvg} <span>Menyimpan...</span>`;
             
             try {
-                const payload = { action: "update", id: uniqueId, status: statusVal, pnl: pnlVal };
+                // Sengaja mengirim Pair juga sebagai Backup jika ID kosong
+                const payload = { action: "update", id: uniqueId, pair: pairName, status: statusVal, pnl: pnlVal };
                 const response = await fetch(SCRIPT_URL, { redirect: "follow", method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
                 const result = await response.json();
 
@@ -392,9 +391,11 @@
         // 4. DELETE DATA
         // ==========================================
         let cardIdToDelete = null;
+        let pairToDelete = null;
 
         function openDeleteModal(pairName, uniqueId) {
             cardIdToDelete = uniqueId;
+            pairToDelete = pairName;
             document.getElementById('deleteSignalName').innerText = pairName;
             const modal = document.getElementById('deleteModal'); const card = document.getElementById('deleteModalCard');
             modal.classList.remove('hidden');
@@ -404,7 +405,7 @@
         function closeDeleteModal() {
             const modal = document.getElementById('deleteModal'); const card = document.getElementById('deleteModalCard');
             modal.classList.add('opacity-0'); card.classList.remove('scale-100'); card.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); cardIdToDelete = null; }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); cardIdToDelete = null; pairToDelete = null; }, 300);
         }
 
         async function confirmDelete() {
@@ -415,7 +416,8 @@
             btnConfirm.disabled = true; btnCancel.disabled = true; btnConfirm.innerHTML = spinnerSvg; 
 
             try {
-                const payload = { action: "delete", id: cardIdToDelete };
+                // Sengaja mengirim Pair juga sebagai Backup jika ID kosong
+                const payload = { action: "delete", id: cardIdToDelete, pair: pairToDelete };
                 const response = await fetch(SCRIPT_URL, { redirect: "follow", method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
                 const result = await response.json();
 
