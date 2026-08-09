@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <!-- Mencegah Auto-Zoom di iOS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Admin - SNR TRADE</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        base: '#000000',
+                        surface: '#0a0a0a',
+                        surfaceHover: '#171717', 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Glass effect monokrom */
+        .glass-card {
+            background: linear-gradient(145deg, rgba(20,20,20,0.8) 0%, rgba(10,10,10,0.4) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        /* Kustomisasi Input Umum */
+        input {
+            background-color: #0a0a0a;
+            border: 1px solid #27272a; 
+            color: white;
+            transition: all 0.2s ease-in-out;
+            font-size: 16px !important; 
+        }
+        input:focus {
+            outline: none;
+            border-color: #ffffff;
+        }
+
+        /* Custom Scrollbar untuk Dropdown */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+        
+        /* Toast Animation */
+        #toast {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            transform: translateY(-150%);
+            opacity: 0;
+        }
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Kalender Kustom */
+        .cal-day:hover { background-color: #27272a; color: white; cursor: pointer; }
+        .cal-day.active { background-color: #ffffff; color: #000000; font-weight: bold; }
+    </style>
+</head>
+<body class="min-h-screen pb-16 pt-8 relative">
+
+    <!-- Toast Notification (Z-index paling tinggi) -->
+    <div class="fixed top-5 left-0 right-0 z-[1000] flex justify-center pointer-events-none">
+        <div id="toast" class="bg-white text-black px-6 py-3 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.2)] font-bold text-sm flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            <span id="toastMessage">Data berhasil disimpan!</span>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Sinyal -->
+    <div id="deleteModal" class="fixed inset-0 z-[999] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+        <div class="glass-card bg-surface rounded-2xl p-6 w-[90%] max-w-sm relative z-10 transform scale-95 transition-transform duration-300 border border-zinc-800" id="deleteModalCard">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </div>
+                <h3 class="text-white font-extrabold text-lg">Hapus Sinyal?</h3>
+            </div>
+            <p class="text-zinc-400 text-sm mb-6 leading-relaxed">Apakah Anda yakin ingin menghapus sinyal <strong class="text-white" id="deleteSignalName">BTC/USDT</strong>? Data yang dihapus tidak bisa dikembalikan.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="w-1/2 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-bold text-sm hover:bg-zinc-800 hover:text-white transition-all">Batal</button>
+                <button onclick="confirmDelete()" class="w-1/2 py-3 rounded-xl bg-white text-red-600 font-extrabold text-sm hover:bg-red-50 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto px-5">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8 border-b border-zinc-800 pb-5">
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                    <span class="bg-white text-black px-2 py-0.5 rounded text-sm">ADMIN</span>
+                    SNR Trade
+                </h1>
+            </div>
+            <a href="index.html" class="text-sm font-semibold text-zinc-400 hover:text-white transition-all flex items-center gap-1">
+                <span>Lihat Web</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </a>
+        </div>
+
+        <!-- Section 1: Form Tambah Sinyal (Z-index ditinggikan untuk amankan kalender) -->
+        <div class="glass-card rounded-3xl p-5 md:p-7 mb-10 relative z-50">
+            <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
+                <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah Sinyal Baru
+            </h2>
+            
+            <form id="addSignalForm" onsubmit="handleNewSignal(event, this.querySelector('button[type=submit]'))">
+                
+                <!-- Wrapper GRID dibuat relative z-50 agar lapisannya di atas tombol submit -->
+                <div class="grid grid-cols-2 gap-4 mb-6 relative z-50">
+                    
+                    <!-- Pair -->
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Coin Pair</label>
+                        <input type="text" id="inputPair" placeholder="Contoh: BTC/USDT" required class="w-full px-4 py-3 rounded-xl placeholder-zinc-700">
+                    </div>
+                    
+                    <!-- Custom Dropdown: Type -->
+                    <div class="col-span-2 sm:col-span-1 relative">
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Tipe Posisi</label>
+                        <input type="hidden" id="valType" value="LONG">
+                        <button type="button" onclick="toggleDropdown('typeDropdown')" id="btnType" class="w-full px-4 py-3 rounded-xl bg-surface border border-zinc-800 text-left flex justify-between items-center text-[16px] text-white">
+                            <span>LONG</span>
+                            <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <ul id="typeDropdown" class="absolute w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl hidden z-50 max-h-52 overflow-y-auto custom-scroll text-[16px]">
+                            <li onclick="selectOption('btnType', 'valType', 'typeDropdown', 'LONG')" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">LONG</li>
+                            <li onclick="selectOption('btnType', 'valType', 'typeDropdown', 'SHORT')" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">SHORT</li>
+                            <li onclick="selectOption('btnType', 'valType', 'typeDropdown', 'GRID LONG')" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">GRID LONG</li>
+                            <li onclick="selectOption('btnType', 'valType', 'typeDropdown', 'GRID SHORT')" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">GRID SHORT</li>
+                            <li onclick="selectOption('btnType', 'valType', 'typeDropdown', 'GRID NETRAL')" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">GRID NETRAL</li>
+                        </ul>
+                    </div>
+
+                    <!-- Leverage -->
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Leverage</label>
+                        <div class="relative">
+                            <input type="number" id="inputLeverage" placeholder="20" required oninput="handleLeverageInput()" class="w-full px-4 py-3 rounded-xl pr-8">
+                            <span class="absolute right-4 top-3.5 text-zinc-500 font-bold text-sm">x</span>
+                        </div>
+                    </div>
+
+                    <!-- Custom Dropdown: Risk -->
+                    <div class="col-span-2 sm:col-span-1 relative">
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Risk Level</label>
+                        <input type="hidden" id="valRisk" value="Otomatis" data-manual="false">
+                        <button type="button" onclick="toggleDropdown('riskDropdown')" id="btnRisk" class="w-full px-4 py-3 rounded-xl bg-surface border border-zinc-800 text-left flex justify-between items-center text-[16px] text-zinc-400">
+                            <span>Otomatis</span>
+                            <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <ul id="riskDropdown" class="absolute w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl hidden z-50 max-h-52 overflow-y-auto custom-scroll text-[16px]">
+                            <li onclick="selectRisk('Otomatis', false)" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer text-zinc-400">Otomatis menyesuaikan</li>
+                            <li onclick="selectRisk('Low Risk', true)" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">Low Risk</li>
+                            <li onclick="selectRisk('Medium Risk', true)" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">Medium Risk</li>
+                            <li onclick="selectRisk('High Risk', true)" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">High Risk</li>
+                            <li onclick="selectRisk('Very High Risk', true)" class="px-4 py-3 hover:bg-zinc-800 cursor-pointer">Very High Risk</li>
+                        </ul>
+                    </div>
+
+                    <!-- Custom Date Picker Field -->
+                    <div class="col-span-2 sm:col-span-1 relative">
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Tanggal</label>
+                        <input type="text" id="inputDate" readonly placeholder="Pilih Tanggal" onclick="toggleCalendar()" class="w-full px-4 py-3 rounded-xl placeholder-zinc-700 cursor-pointer bg-surface border-zinc-800">
+                        
+                        <!-- Kalender Kustom Wrapper -->
+                        <div id="calendarWrapper" class="absolute left-0 top-full mt-2 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-4 w-64 hidden z-50">
+                            <div class="flex justify-between items-center mb-3">
+                                <button type="button" onclick="changeMonth(-1)" class="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-all">&larr;</button>
+                                <span id="calMonthYear" class="font-bold text-sm">Agustus 2026</span>
+                                <button type="button" onclick="changeMonth(1)" class="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-all">&rarr;</button>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-zinc-500 mb-2">
+                                <div>M</div><div>S</div><div>S</div><div>R</div><div>K</div><div>J</div><div>S</div>
+                            </div>
+                            <div id="calDaysGrid" class="grid grid-cols-7 gap-1 text-center text-sm font-medium"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button dengan z-index rendah agar tidak menimpa dropdown kalender di atasnya -->
+                <button type="submit" class="w-full bg-white text-black font-extrabold text-[16px] py-4 rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.15)] flex justify-center items-center transition-all hover:scale-[1.01] relative z-10">
+                    <span>Siarkan Call Sekarang</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Section 2: Kelola Sinyal (Live List) -->
+        <div>
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                Kelola Sinyal Berjalan
+            </h2>
+
+            <!-- Kontainer Cards (Z-index 40) -->
+            <div class="space-y-4 relative z-40">
+                
+                <!-- Item 1 (RUNNING) -->
+                <div id="card-btc" class="signal-card glass-card rounded-2xl p-4 flex flex-col gap-4 relative z-10 transition-all duration-300">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-bold text-white">BTC/USDT</span>
+                            <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-semibold">20x</span>
+                            <span class="text-[9px] font-extrabold px-2 py-0.5 rounded bg-white text-black">LONG</span>
+                        </div>
+                        
+                        <!-- Delete Button -->
+                        <button onclick="openDeleteModal('BTC/USDT', 'card-btc')" class="p-1.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all ml-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="flex gap-3 items-end relative">
+                        <div class="w-1/2 relative">
+                            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Update Status</label>
+                            <input type="hidden" id="valStatus1" value="RUNNING">
+                            <button type="button" onclick="toggleDropdown('statusDropdown1')" id="btnStatus1" class="w-full px-3 py-2.5 rounded-lg bg-surface border border-zinc-700 text-left flex justify-between items-center text-xs font-bold text-white">
+                                <span>RUNNING</span>
+                                <svg class="w-3 h-3 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <!-- Dropdown List -->
+                            <ul id="statusDropdown1" class="absolute w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl hidden z-50 max-h-48 overflow-y-auto text-xs font-bold custom-scroll">
+                                <li onclick="selectOption('btnStatus1', 'valStatus1', 'statusDropdown1', 'RUNNING')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer">RUNNING</li>
+                                <li onclick="selectOption('btnStatus1', 'valStatus1', 'statusDropdown1', 'WIN')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-white">WIN</li>
+                                <li onclick="selectOption('btnStatus1', 'valStatus1', 'statusDropdown1', 'LOSS')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-400">LOSS</li>
+                                <li onclick="selectOption('btnStatus1', 'valStatus1', 'statusDropdown1', 'BEP')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-400">BEP</li>
+                                <li onclick="selectOption('btnStatus1', 'valStatus1', 'statusDropdown1', 'CANCEL')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-500">CANCEL</li>
+                            </ul>
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Update PNL (%)</label>
+                            <input type="text" value="+2.5" class="w-full px-3 py-2.5 rounded-lg text-xs font-semibold text-white text-center">
+                        </div>
+                    </div>
+                    <button onclick="handleUpdateSignal(this, 'BTC/USDT')" class="w-full mt-1 border border-zinc-700 text-zinc-300 font-bold text-[14px] py-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all flex justify-center items-center">
+                        <span>Simpan Perubahan</span>
+                    </button>
+                </div>
+
+                <!-- Item 2 (RUNNING) -->
+                <div id="card-sol" class="signal-card glass-card rounded-2xl p-4 flex flex-col gap-4 relative z-10 transition-all duration-300">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-bold text-white">SOL/USDT</span>
+                            <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-semibold">50x</span>
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-transparent text-zinc-400 border border-zinc-600">SHORT</span>
+                        </div>
+                        
+                        <!-- Delete Button -->
+                        <button onclick="openDeleteModal('SOL/USDT', 'card-sol')" class="p-1.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all ml-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="flex gap-3 items-end relative">
+                        <div class="w-1/2 relative">
+                            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Update Status</label>
+                            <input type="hidden" id="valStatus2" value="RUNNING">
+                            <button type="button" onclick="toggleDropdown('statusDropdown2')" id="btnStatus2" class="w-full px-3 py-2.5 rounded-lg bg-surface border border-zinc-700 text-left flex justify-between items-center text-xs font-bold text-white">
+                                <span>RUNNING</span>
+                                <svg class="w-3 h-3 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <!-- Dropdown List -->
+                            <ul id="statusDropdown2" class="absolute w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl hidden z-50 max-h-48 overflow-y-auto text-xs font-bold custom-scroll">
+                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'RUNNING')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer">RUNNING</li>
+                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'WIN')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-white">WIN</li>
+                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'LOSS')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-400">LOSS</li>
+                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'BEP')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-400">BEP</li>
+                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'CANCEL')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-500">CANCEL</li>
+                            </ul>
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Update PNL (%)</label>
+                            <input type="text" value="-8.5" class="w-full px-3 py-2.5 rounded-lg text-xs font-semibold text-white text-center">
+                        </div>
+                    </div>
+                    <button onclick="handleUpdateSignal(this, 'SOL/USDT')" class="w-full mt-1 border border-zinc-700 text-zinc-300 font-bold text-[14px] py-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all flex justify-center items-center">
+                        <span>Simpan Perubahan</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // SISTEM CUSTOM DROPDOWN & EVENT LUAR KLIK
+        // ==========================================
+        function toggleDropdown(id) {
+            // Jika kalender sedang terbuka, tutup kalender
+            const cal = document.getElementById('calendarWrapper');
+            if (cal) cal.classList.add('hidden');
+
+            // Kembalikan z-index semua card menjadi 10
+            document.querySelectorAll('.signal-card').forEach(el => {
+                el.style.zIndex = '10';
+            });
+
+            // Tutup dropdown lain yang sedang terbuka
+            document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => {
+                if(el.id !== id) el.classList.add('hidden');
+            });
+
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden');
+
+            // Jika dropdown ini terbuka, naikkan z-index card parent nya agar tidak tertimpa
+            if(!el.classList.contains('hidden')) {
+                const parentCard = el.closest('.signal-card');
+                if(parentCard) parentCard.style.zIndex = '50';
+            }
+        }
+
+        function selectOption(btnId, valId, dropdownId, text) {
+            document.getElementById(btnId).querySelector('span').innerText = text;
+            document.getElementById(valId).value = text;
+            document.getElementById(dropdownId).classList.add('hidden');
+            
+            // Kembalikan z-index card
+            const parentCard = document.getElementById(dropdownId).closest('.signal-card');
+            if(parentCard) parentCard.style.zIndex = '10';
+        }
+
+        // Fungsi Global untuk menutup popup saat user klik/touch di luar elemen
+        function closePopupsOutside(e) {
+            // Cek klik di luar area dropdown
+            if (!e.target.closest('button[onclick*="toggleDropdown"]') && !e.target.closest('ul[id*="Dropdown"]')) {
+                document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.signal-card').forEach(el => el.style.zIndex = '10');
+            }
+            // Cek klik di luar area kalender
+            if (!e.target.closest('#calendarWrapper') && !e.target.closest('#inputDate') && !e.target.closest('button[onclick*="changeMonth"]')) {
+                const cal = document.getElementById('calendarWrapper');
+                if (cal) cal.classList.add('hidden');
+            }
+        }
+
+        // Gunakan mousedown/touchstart agar terdeteksi sempurna di layar HP & PC
+        document.addEventListener('mousedown', closePopupsOutside);
+        document.addEventListener('touchstart', closePopupsOutside, { passive: true });
+
+        // ==========================================
+        // LOGIKA AUTO RISK BERDASARKAN LEVERAGE
+        // ==========================================
+        function selectRisk(text, isManual) {
+            const btnSpan = document.getElementById('btnRisk').querySelector('span');
+            const valInput = document.getElementById('valRisk');
+            
+            valInput.dataset.manual = isManual ? "true" : "false";
+            valInput.value = text;
+            
+            if (!isManual) {
+                btnSpan.innerText = "Otomatis";
+                btnSpan.className = "text-zinc-400";
+                handleLeverageInput(); 
+            } else {
+                btnSpan.innerText = text;
+                btnSpan.className = "text-white";
+            }
+            document.getElementById('riskDropdown').classList.add('hidden');
+        }
+
+        function handleLeverageInput() {
+            const levStr = document.getElementById('inputLeverage').value;
+            const valRisk = document.getElementById('valRisk');
+            
+            if (valRisk.dataset.manual === "true") return;
+
+            const btnSpan = document.getElementById('btnRisk').querySelector('span');
+            const lev = parseInt(levStr) || 0;
+
+            if (levStr === "") {
+                btnSpan.innerText = "Otomatis";
+                btnSpan.className = "text-zinc-400";
+                valRisk.value = "Otomatis";
+                return;
+            }
+
+            let calculatedRisk = "";
+            if (lev < 10) calculatedRisk = "Low Risk";
+            else if (lev <= 25) calculatedRisk = "Medium Risk";
+            else if (lev <= 100) calculatedRisk = "High Risk";
+            else calculatedRisk = "Very High Risk";
+
+            btnSpan.innerText = `Otomatis (${calculatedRisk})`;
+            btnSpan.className = "text-white font-bold";
+            valRisk.value = calculatedRisk; 
+        }
+
+        // ==========================================
+        // SISTEM CUSTOM DATE PICKER (KALENDER)
+        // ==========================================
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const fullMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        
+        let calDate = new Date(); 
+        let todayDate = new Date(); 
+
+        document.getElementById('inputDate').value = `${String(todayDate.getDate()).padStart(2, '0')} ${monthNames[todayDate.getMonth()]}`;
+
+        function toggleCalendar() {
+            // Jika dropdown sedang terbuka, tutup semua dropdown
+            document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.signal-card').forEach(el => el.style.zIndex = '10');
+
+            document.getElementById('calendarWrapper').classList.toggle('hidden');
+            renderCalendar();
+        }
+
+        function changeMonth(step) {
+            calDate.setMonth(calDate.getMonth() + step);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const year = calDate.getFullYear();
+            const month = calDate.getMonth();
+            document.getElementById('calMonthYear').innerText = `${fullMonthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay(); 
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const grid = document.getElementById('calDaysGrid');
+            grid.innerHTML = '';
+
+            for(let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div></div>`;
+            }
+
+            for(let day = 1; day <= daysInMonth; day++) {
+                const isToday = (day === todayDate.getDate() && month === todayDate.getMonth() && year === todayDate.getFullYear());
+                const activeClass = isToday ? 'active rounded-md' : 'rounded-md';
+                grid.innerHTML += `<div class="cal-day py-1.5 ${activeClass}" onclick="selectDate(${day}, ${month})">${day}</div>`;
+            }
+        }
+
+        function selectDate(day, month) {
+            const formatted = `${String(day).padStart(2, '0')} ${monthNames[month]}`;
+            document.getElementById('inputDate').value = formatted;
+            document.getElementById('calendarWrapper').classList.add('hidden');
+        }
+
+
+        // ==========================================
+        // SISTEM MODAL HAPUS SINYAL
+        // ==========================================
+        let cardIdToDelete = null;
+
+        function openDeleteModal(pairName, cardId) {
+            cardIdToDelete = cardId;
+            document.getElementById('deleteSignalName').innerText = pairName;
+            
+            const modal = document.getElementById('deleteModal');
+            const card = document.getElementById('deleteModalCard');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            const card = document.getElementById('deleteModalCard');
+            
+            modal.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                cardIdToDelete = null;
+            }, 300);
+        }
+
+        function confirmDelete() {
+            if(!cardIdToDelete) return;
+            
+            const cardElement = document.getElementById(cardIdToDelete);
+            closeDeleteModal(); 
+            
+            if(cardElement) {
+                cardElement.style.opacity = '0';
+                cardElement.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    cardElement.remove(); 
+                    showToast('Sinyal berhasil dihapus!');
+                }, 300);
+            }
+        }
+
+        // ==========================================
+        // SISTEM LOADING & NOTIFIKASI
+        // ==========================================
+        const spinnerSvg = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        async function handleNewSignal(event, btnElement) {
+            event.preventDefault();
+            const pair = document.getElementById('inputPair').value.toUpperCase();
+            
+            const originalText = btnElement.innerHTML;
+            btnElement.disabled = true;
+            btnElement.classList.add('opacity-50', 'cursor-not-allowed');
+            btnElement.innerHTML = `${spinnerSvg} <span>Menyiarkan...</span>`;
+
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            btnElement.disabled = false;
+            btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnElement.innerHTML = originalText;
+
+            showToast(`Sinyal ${pair} berhasil disiarkan!`);
+            
+            document.getElementById('inputPair').value = '';
+            document.getElementById('inputLeverage').value = '';
+            selectRisk('Otomatis', false); 
+        }
+
+        async function handleUpdateSignal(btnElement, pairName) {
+            const originalText = btnElement.innerHTML;
+            btnElement.disabled = true;
+            btnElement.classList.add('opacity-50', 'cursor-not-allowed');
+            btnElement.innerHTML = `${spinnerSvg} <span>Menyimpan...</span>`;
+
+            await new Promise(resolve => setTimeout(resolve, 1200));
+
+            btnElement.disabled = false;
+            btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnElement.innerHTML = originalText;
+
+            showToast(`Perubahan ${pairName} berhasil disimpan!`);
+        }
+
+        let toastTimeout;
+        function showToast(message) {
+            const toastEl = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            
+            toastMsg.innerText = message;
+            toastEl.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
+        }
+
+    </script>
+</body>
+</html>
