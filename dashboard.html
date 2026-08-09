@@ -132,7 +132,7 @@
         // ==========================================
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6IiihaJF6K1kU-gKao2Vm2ooUxUxDOI5-sTiemE1JPYwSNeyU2qpkCepUTu_Ca_yMlw/exec";
 
-        // Variabel Database Dinamis (menggantikan dummy db)
+        // Variabel Database Dinamis
         let db = { '7d': null, '30d': null, '90d': null, '1y': null };
         let rawDatabase = [];
 
@@ -162,17 +162,25 @@
             const parts = String(dateStr).trim().split(' ');
             const day = parseInt(parts[0]);
             const monthIndex = indoMonths.indexOf(parts[1]);
+            
+            // Fallback jika format tanggal aneh di database
+            if (isNaN(day) || monthIndex === -1) return new Date(); 
+            
             const year = new Date().getFullYear();
             return new Date(year, monthIndex, day);
         }
 
         async function loadDataFromSheets() {
             try {
-                const response = await fetch(SCRIPT_URL);
+                // Diperbaiki: Menambah redirect follow (penting untuk Apps Script GET)
+                const response = await fetch(SCRIPT_URL, { redirect: "follow" });
                 const json = await response.json();
                 
+                // Diperbaiki: Antisipasi jika JSON struktur response berubah
+                const fetchedData = json.data || (Array.isArray(json) ? json : []);
+                
                 // Ambil data, filter baris yg kosong, lalu dibalik (terbaru di atas)
-                rawDatabase = json.data.filter(row => row.pair).reverse();
+                rawDatabase = fetchedData.filter(row => row && row.pair).reverse();
 
                 // Proses data otomatis membagi ke 4 waktu
                 db['7d'] = generateStats(7);
@@ -220,15 +228,18 @@
             let filteredRows = rawDatabase.filter(row => parseIndoDate(row.date) >= cutoffDate);
 
             filteredRows.forEach(row => {
-                if (row.status === 'WIN') wins++;
-                if (row.status === 'LOSS') losses++;
+                // Diperbaiki: Trim & Uppercase memastikan tidak ada bug dari human error (spasi berlebih)
+                let status = String(row.status || "").trim().toUpperCase();
+
+                if (status === 'WIN') wins++;
+                if (status === 'LOSS') losses++;
                 
-                // Bersihkan string angka (contoh: "+25.5%" -> 25.5)
-                let pnlStr = String(row.pnl || "0").replace('%', '').replace('+', '').trim();
+                // Diperbaiki: Bersihkan string angka dan replace koma menjadi titik untuk hitungan JS
+                let pnlStr = String(row.pnl || "0").replace('%', '').replace('+', '').replace(',', '.').trim();
                 let pnlVal = parseFloat(pnlStr) || 0;
 
                 // Hitung kumulatif chart HANYA untuk status WIN, LOSS, BEP
-                if (row.status === 'WIN' || row.status === 'LOSS' || row.status === 'BEP') {
+                if (status === 'WIN' || status === 'LOSS' || status === 'BEP') {
                     totalPnlSum += pnlVal;
                     if (chartMap[row.date] !== undefined) {
                         chartMap[row.date] += pnlVal;
@@ -236,18 +247,18 @@
                 }
 
                 // Format rapi untuk ditampilkan di riwayat
-                let finalPnl = String(row.pnl);
+                let finalPnl = String(row.pnl || "0");
                 if (pnlVal > 0 && !finalPnl.includes('+')) finalPnl = '+' + finalPnl;
                 if (!finalPnl.includes('%') && finalPnl !== '-') finalPnl += '%';
                 
-                let finalLeverage = String(row.leverage);
+                let finalLeverage = String(row.leverage || "1");
                 if (!finalLeverage.includes('x')) finalLeverage += 'x';
 
                 historyList.push({
                     pair: row.pair,
                     type: row.type,
                     leverage: finalLeverage,
-                    status: row.status,
+                    status: status,
                     pnl: finalPnl,
                     date: row.date
                 });
@@ -371,15 +382,16 @@
                 let pnlTextColor = 'text-zinc-500';
                 if (item.pnl.includes('+')) pnlTextColor = 'text-white';
 
+                // Diperbaiki: Class tailwind py-0.2 diubah ke custom py-[2px] 
                 const html = `
                 <div class="glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-zinc-900 transition-all">
                     <div class="flex flex-col gap-1 w-1/3">
                         <div class="flex items-center gap-2">
                             <span class="font-bold text-sm text-white">${item.pair}</span>
-                            <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.2 rounded font-semibold">${item.leverage}</span>
+                            <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-[2px] rounded font-semibold">${item.leverage}</span>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${typeColors}">${item.type}</span>
+                            <span class="text-[9px] font-bold px-1.5 py-[2px] rounded ${typeColors}">${item.type}</span>
                             <span class="text-[8px] ${riskColor}">• ${riskLabel}</span>
                         </div>
                     </div>
