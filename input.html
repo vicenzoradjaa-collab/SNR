@@ -116,7 +116,7 @@
             </a>
         </div>
 
-        <!-- Section 1: Form Tambah Sinyal (Z-index ditinggikan untuk amankan kalender) -->
+        <!-- Section 1: Form Tambah Sinyal -->
         <div class="glass-card rounded-3xl p-5 md:p-7 mb-10 relative z-50">
             <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
                 <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -125,7 +125,6 @@
             
             <form id="addSignalForm" onsubmit="handleNewSignal(event, this.querySelector('button[type=submit]'))">
                 
-                <!-- Wrapper GRID dibuat relative z-50 agar lapisannya di atas tombol submit -->
                 <div class="grid grid-cols-2 gap-4 mb-6 relative z-50">
                     
                     <!-- Pair -->
@@ -134,7 +133,7 @@
                         <input type="text" id="inputPair" placeholder="Contoh: BTC/USDT" required class="w-full px-4 py-3 rounded-xl placeholder-zinc-700">
                     </div>
                     
-                    <!-- Custom Dropdown: Type -->
+                    <!-- Type -->
                     <div class="col-span-2 sm:col-span-1 relative">
                         <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Tipe Posisi</label>
                         <input type="hidden" id="valType" value="LONG">
@@ -160,7 +159,7 @@
                         </div>
                     </div>
 
-                    <!-- Custom Dropdown: Risk -->
+                    <!-- Risk -->
                     <div class="col-span-2 sm:col-span-1 relative">
                         <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Risk Level</label>
                         <input type="hidden" id="valRisk" value="Otomatis" data-manual="false">
@@ -177,12 +176,11 @@
                         </ul>
                     </div>
 
-                    <!-- Custom Date Picker Field -->
+                    <!-- Date -->
                     <div class="col-span-2 sm:col-span-1 relative">
                         <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Tanggal</label>
                         <input type="text" id="inputDate" readonly placeholder="Pilih Tanggal" onclick="toggleCalendar()" class="w-full px-4 py-3 rounded-xl placeholder-zinc-700 cursor-pointer bg-surface border-zinc-800">
                         
-                        <!-- Kalender Kustom Wrapper -->
                         <div id="calendarWrapper" class="absolute left-0 top-full mt-2 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-4 w-64 hidden z-50">
                             <div class="flex justify-between items-center mb-3">
                                 <button type="button" onclick="changeMonth(-1)" class="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-all">&larr;</button>
@@ -197,7 +195,6 @@
                     </div>
                 </div>
 
-                <!-- Submit Button dengan z-index rendah agar tidak menimpa dropdown kalender di atasnya -->
                 <button type="submit" class="w-full bg-white text-black font-extrabold text-[16px] py-4 rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.15)] flex justify-center items-center transition-all hover:scale-[1.01] relative z-10">
                     <span>Siarkan Call Sekarang</span>
                 </button>
@@ -211,10 +208,10 @@
                 Kelola Sinyal Berjalan
             </h2>
 
-            <!-- Kontainer Cards (Z-index 40) -->
-            <div class="space-y-4 relative z-40">
+            <!-- Kontainer Cards -->
+            <div class="space-y-4 relative z-40" id="signalsContainer">
                 
-                <!-- Item 1 (RUNNING) -->
+                <!-- Contoh Data Card Awal -->
                 <div id="card-btc" class="signal-card glass-card rounded-2xl p-4 flex flex-col gap-4 relative z-10 transition-all duration-300">
                     <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -222,8 +219,6 @@
                             <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-semibold">20x</span>
                             <span class="text-[9px] font-extrabold px-2 py-0.5 rounded bg-white text-black">LONG</span>
                         </div>
-                        
-                        <!-- Delete Button -->
                         <button onclick="openDeleteModal('BTC/USDT', 'card-btc')" class="p-1.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all ml-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
@@ -237,7 +232,6 @@
                                 <span>RUNNING</span>
                                 <svg class="w-3 h-3 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <!-- Dropdown List -->
                             <ul id="statusDropdown1" class="absolute w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl hidden z-50 max-h-48 overflow-y-auto text-xs font-bold custom-scroll">
                                 <li onclick="selectOption('btnStatus1', 'valStatus1', 'statusDropdown1', 'RUNNING')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer">RUNNING</li>
                                 <li onclick="selectOption('btnStatus1', 'valStatus1', 'statusDropdown1', 'WIN')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-white">WIN</li>
@@ -255,69 +249,24 @@
                         <span>Simpan Perubahan</span>
                     </button>
                 </div>
-
-                <!-- Item 2 (RUNNING) -->
-                <div id="card-sol" class="signal-card glass-card rounded-2xl p-4 flex flex-col gap-4 relative z-10 transition-all duration-300">
-                    <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-bold text-white">SOL/USDT</span>
-                            <span class="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-semibold">50x</span>
-                            <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-transparent text-zinc-400 border border-zinc-600">SHORT</span>
-                        </div>
-                        
-                        <!-- Delete Button -->
-                        <button onclick="openDeleteModal('SOL/USDT', 'card-sol')" class="p-1.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all ml-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
-                    
-                    <div class="flex gap-3 items-end relative">
-                        <div class="w-1/2 relative">
-                            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Update Status</label>
-                            <input type="hidden" id="valStatus2" value="RUNNING">
-                            <button type="button" onclick="toggleDropdown('statusDropdown2')" id="btnStatus2" class="w-full px-3 py-2.5 rounded-lg bg-surface border border-zinc-700 text-left flex justify-between items-center text-xs font-bold text-white">
-                                <span>RUNNING</span>
-                                <svg class="w-3 h-3 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </button>
-                            <!-- Dropdown List -->
-                            <ul id="statusDropdown2" class="absolute w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl hidden z-50 max-h-48 overflow-y-auto text-xs font-bold custom-scroll">
-                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'RUNNING')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer">RUNNING</li>
-                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'WIN')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-white">WIN</li>
-                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'LOSS')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-400">LOSS</li>
-                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'BEP')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-400">BEP</li>
-                                <li onclick="selectOption('btnStatus2', 'valStatus2', 'statusDropdown2', 'CANCEL')" class="px-3 py-2.5 hover:bg-zinc-800 cursor-pointer text-zinc-500">CANCEL</li>
-                            </ul>
-                        </div>
-                        <div class="w-1/2">
-                            <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Update PNL (%)</label>
-                            <input type="text" value="-8.5" class="w-full px-3 py-2.5 rounded-lg text-xs font-semibold text-white text-center">
-                        </div>
-                    </div>
-                    <button onclick="handleUpdateSignal(this, 'SOL/USDT')" class="w-full mt-1 border border-zinc-700 text-zinc-300 font-bold text-[14px] py-3 rounded-xl hover:bg-zinc-800 hover:text-white transition-all flex justify-center items-center">
-                        <span>Simpan Perubahan</span>
-                    </button>
-                </div>
-
             </div>
         </div>
-
     </div>
 
     <script>
         // ==========================================
-        // SISTEM CUSTOM DROPDOWN & EVENT LUAR KLIK
+        // SISTEM URL API GOOGLE SPREADSHEET
+        // ==========================================
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj2TPPRDoNFpyU2_jPAsPfMcIfM6TreWYDF6idUvg6GqDAW-0BsYlUL_9V_rdUyWpY/exec";
+
+        // ==========================================
+        // SISTEM DROPDOWN & POPUP
         // ==========================================
         function toggleDropdown(id) {
-            // Jika kalender sedang terbuka, tutup kalender
             const cal = document.getElementById('calendarWrapper');
             if (cal) cal.classList.add('hidden');
 
-            // Kembalikan z-index semua card menjadi 10
-            document.querySelectorAll('.signal-card').forEach(el => {
-                el.style.zIndex = '10';
-            });
-
-            // Tutup dropdown lain yang sedang terbuka
+            document.querySelectorAll('.signal-card').forEach(el => { el.style.zIndex = '10'; });
             document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => {
                 if(el.id !== id) el.classList.add('hidden');
             });
@@ -325,7 +274,6 @@
             const el = document.getElementById(id);
             el.classList.toggle('hidden');
 
-            // Jika dropdown ini terbuka, naikkan z-index card parent nya agar tidak tertimpa
             if(!el.classList.contains('hidden')) {
                 const parentCard = el.closest('.signal-card');
                 if(parentCard) parentCard.style.zIndex = '50';
@@ -337,31 +285,26 @@
             document.getElementById(valId).value = text;
             document.getElementById(dropdownId).classList.add('hidden');
             
-            // Kembalikan z-index card
             const parentCard = document.getElementById(dropdownId).closest('.signal-card');
             if(parentCard) parentCard.style.zIndex = '10';
         }
 
-        // Fungsi Global untuk menutup popup saat user klik/touch di luar elemen
         function closePopupsOutside(e) {
-            // Cek klik di luar area dropdown
             if (!e.target.closest('button[onclick*="toggleDropdown"]') && !e.target.closest('ul[id*="Dropdown"]')) {
                 document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('.signal-card').forEach(el => el.style.zIndex = '10');
             }
-            // Cek klik di luar area kalender
             if (!e.target.closest('#calendarWrapper') && !e.target.closest('#inputDate') && !e.target.closest('button[onclick*="changeMonth"]')) {
                 const cal = document.getElementById('calendarWrapper');
                 if (cal) cal.classList.add('hidden');
             }
         }
 
-        // Gunakan mousedown/touchstart agar terdeteksi sempurna di layar HP & PC
         document.addEventListener('mousedown', closePopupsOutside);
         document.addEventListener('touchstart', closePopupsOutside, { passive: true });
 
         // ==========================================
-        // LOGIKA AUTO RISK BERDASARKAN LEVERAGE
+        // LOGIKA AUTO RISK 
         // ==========================================
         function selectRisk(text, isManual) {
             const btnSpan = document.getElementById('btnRisk').querySelector('span');
@@ -409,7 +352,7 @@
         }
 
         // ==========================================
-        // SISTEM CUSTOM DATE PICKER (KALENDER)
+        // SISTEM KALENDER KUSTOM
         // ==========================================
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         const fullMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -420,7 +363,6 @@
         document.getElementById('inputDate').value = `${String(todayDate.getDate()).padStart(2, '0')} ${monthNames[todayDate.getMonth()]}`;
 
         function toggleCalendar() {
-            // Jika dropdown sedang terbuka, tutup semua dropdown
             document.querySelectorAll('ul[id*="Dropdown"]').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.signal-card').forEach(el => el.style.zIndex = '10');
 
@@ -461,9 +403,8 @@
             document.getElementById('calendarWrapper').classList.add('hidden');
         }
 
-
         // ==========================================
-        // SISTEM MODAL HAPUS SINYAL
+        // MODAL HAPUS SINYAL
         // ==========================================
         let cardIdToDelete = null;
 
@@ -513,7 +454,7 @@
         }
 
         // ==========================================
-        // FUNGSI TOAST NOTIFICATION (BARU)
+        // SISTEM TOAST & LOADING UI
         // ==========================================
         let toastTimeout;
         function showToast(message) {
@@ -529,19 +470,34 @@
             }, 3000);
         }
 
-        // ==========================================
-        // SISTEM LOADING & NOTIFIKASI & DATABASE
-        // ==========================================
         const spinnerSvg = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
         // ==========================================
-        // FUNGSI UPDATE UI KELOLA SINYAL (BARU)
+        // FUNGSI UPDATE SINYAL SAAT TOMBOL DIKLIK
+        // ==========================================
+        function handleUpdateSignal(btnElement, pairName) {
+            // Ubah tombol jadi mode loading
+            const originalText = btnElement.innerHTML;
+            btnElement.disabled = true;
+            btnElement.classList.add('opacity-50', 'cursor-not-allowed');
+            btnElement.innerHTML = `${spinnerSvg} <span>Menyimpan...</span>`;
+            
+            // Simulasi proses simpan delay 1.5 detik (Bisa diganti Fetch API kedepannya)
+            setTimeout(() => {
+                btnElement.disabled = false;
+                btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnElement.innerHTML = originalText;
+                showToast(`Update ${pairName} berhasil disimpan!`);
+            }, 1500);
+        }
+
+        // ==========================================
+        // FUNGSI MENGGAMBAR KARTU BARU KE LAYAR
         // ==========================================
         function addSignalCardToUI(data) {
-            const container = document.querySelector('.space-y-4.relative.z-40');
-            const uniqueId = Date.now(); // Buat ID unik untuk dropdown
+            const container = document.getElementById('signalsContainer');
+            const uniqueId = Date.now(); 
             
-            // Atur warna label tipe posisi
             let typeColors = 'bg-zinc-800 text-zinc-300';
             if(data.type.includes('LONG')) typeColors = 'bg-white text-black font-extrabold';
             if(data.type.includes('SHORT')) typeColors = 'bg-transparent text-zinc-400 border border-zinc-600 font-bold';
@@ -585,12 +541,11 @@
                 </button>
             </div>`;
 
-            // Sisipkan card baru di paling atas list (di bawah judul)
             container.insertAdjacentHTML('afterbegin', html);
         }
 
         // ==========================================
-        // FUNGSI HANDLE SUBMIT (DIPERBAIKI)
+        // FUNGSI MENGIRIM DATA KE GOOGLE SHEETS
         // ==========================================
         async function handleNewSignal(event, btnElement) {
             event.preventDefault();
@@ -628,19 +583,15 @@
 
                 const result = await response.json();
 
-                // Cek balasan dari Google Sheets
                 if (result.status === "success") {
                     showToast(`Sinyal ${pair} berhasil disiarkan!`);
                     
-                    // Reset Form
                     document.getElementById('inputPair').value = '';
                     document.getElementById('inputLeverage').value = '';
                     selectRisk('Otomatis', false); 
 
-                    // Tambahkan ke UI Kelola Sinyal secara Instan
                     addSignalCardToUI(payload);
                 } else {
-                    // Munculkan pesan error sesungguhnya dari Sheets (Membantu Debug)
                     alert("Gagal menyimpan ke Database: " + result.message);
                 }
 
@@ -653,66 +604,6 @@
                 btnElement.innerHTML = originalText;
             }
         }
-
-        // PASTE URL ANDA DI BAWAH INI (Di antara tanda kutip)
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj2TPPRDoNFpyU2_jPAsPfMcIfM6TreWYDF6idUvg6GqDAW-0BsYlUL_9V_rdUyWpY/exec";
-
-        async function handleNewSignal(event, btnElement) {
-            event.preventDefault();
-            
-            // 1. Ambil data dari form
-            const pair = document.getElementById('inputPair').value.toUpperCase();
-            const type = document.getElementById('valType').value;
-            const leverage = document.getElementById('inputLeverage').value;
-            const risk = document.getElementById('valRisk').value;
-            const date = document.getElementById('inputDate').value;
-            
-            // 2. Loading Tombol
-            const originalText = btnElement.innerHTML;
-            btnElement.disabled = true;
-            btnElement.classList.add('opacity-50', 'cursor-not-allowed');
-            btnElement.innerHTML = `${spinnerSvg} <span>Menyiarkan...</span>`;
-
-            try {
-                // 3. Siapkan paket data untuk dikirim
-                const payload = {
-                    pair: pair,
-                    type: type,
-                    leverage: leverage,
-                    risk: risk,
-                    date: date,
-                    status: "RUNNING", 
-                    pnl: "0%"
-                };
-
-                // 4. Kirim ke Google Sheets!
-                await fetch(SCRIPT_URL, {
-                    redirect: "follow",
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "text/plain;charset=utf-8",
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                showToast(`Sinyal ${pair} berhasil disiarkan!`);
-                
-                // Reset Form
-                document.getElementById('inputPair').value = '';
-                document.getElementById('inputLeverage').value = '';
-                selectRisk('Otomatis', false); 
-
-            } catch (error) {
-                alert("Gagal menyiarkan sinyal. Pastikan internet stabil.");
-                console.error(error);
-            } finally {
-                // Matikan loading
-                btnElement.disabled = false;
-                btnElement.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnElement.innerHTML = originalText;
-            }
-        }
-
     </script>
 </body>
 </html>
